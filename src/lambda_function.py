@@ -13,8 +13,7 @@ deserializer = boto3.dynamodb.types.TypeDeserializer()
 
 def dynamo_to_python(dynamodb_response : dict) -> dict:
     return {
-        k: deserializer.deserialize(v)
-        for k, v in dynamodb_response.items()
+        k: deserializer.deserialize(v) for k, v in dynamodb_response.items()
     }
 
 def get_rewrite_rules(key):
@@ -43,7 +42,7 @@ def get_rewrite_rules(key):
 
     raise KeyError(f"No rewrite rules found for key: {key} or {domain}")
 
-def lambda_handler(event, context):
+def lambda_handler(event, _):
     print("Received event: " + json.dumps(event, indent=2))
 
     # Get the object from the event and show its content type
@@ -59,10 +58,10 @@ def lambda_handler(event, context):
 
         rewrite_rules = get_rewrite_rules(msg['To'])
 
-        return_path = rewrite_rules.rewrite_return_path
+        return_path = rewrite_rules['rewrite_return_path']
         msg.replace_header('Return-Path', return_path) if 'Return-Path' in msg else msg.add_header('Return-Path', return_path)
 
-        rewrite_from_address = rewrite_rules.rewrite_from
+        rewrite_from_address = rewrite_rules['rewrite_from']
         if rewrite_from_address == '$return_path':
             rewrite_from_address = return_path
 
@@ -70,7 +69,7 @@ def lambda_handler(event, context):
             FromEmailAddress = rewrite_from_address,
             ReplyToAddresses = [msg['From']],
             Destination={
-                'ToAddresses': [rewrite_rules.rewrite_to_address],  # New envelope recipient
+                'ToAddresses': [rewrite_rules['rewrite_to_address']],  # New envelope recipient
             },
             Content={
                 'Raw': {
