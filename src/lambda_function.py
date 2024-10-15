@@ -12,33 +12,43 @@ ses_rewrite = dynamodb.Table('ses_redirect_rewrite_rules')
 deserializer = boto3.dynamodb.types.TypeDeserializer()
 
 def dynamo_to_python(dynamodb_response : dict) -> dict:
+    if not dynamodb_response:
+        return None
+
     return {
         k: deserializer.deserialize(v) for k, v in dynamodb_response.items()
     }
+
+def get_python_from_dynamo(key):
+    dynamo_response = ses_rewrite.get_item (
+        Key={'to_address': key}
+    )
+
+    print(f"get_python_from_dynamo: {dynamo_response}")
+
+    item = dynamo_response.get('Item', None)
+    print(f"get_python_from_dynamo: {item}")
+
+    for k, v in item.items():
+        print(f"get_python_from_dynamo: {k}: {v}")
+
+    return dynamo_to_python(item)
 
 def get_rewrite_rules(key):
     # Treat 'key' as a complete to-address; <to>@<domain>.
     # If no rewrite rules can be found under that key, 
     # then query for the '@<domain>'.
     
-    dynamo_response = ses_rewrite.get_item (
-        Key={'to_address': key}
-    )
-
-    item = dynamo_response.get('Item', None)
+    item = get_python_from_dynamo(key)
     if item:
-        return dynamo_to_python(item)
+        return item
 
     # Try @<domain> for rewrite rules.
 
     domain = '@' + key.split('@')[1]
-    dynamo_response = ses_rewrite.get_item(
-        Key = {'to_address': domain}
-    )
-
-    item = dynamo_response.get('Item', None)
+    item = get_python_from_dynamo(domain)
     if item:
-        return dynamo_to_python(item)
+        return item
 
     raise KeyError(f"No rewrite rules found for key: {key} or {domain}")
 
