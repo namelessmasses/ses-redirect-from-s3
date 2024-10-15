@@ -32,6 +32,9 @@ def get_python_from_dynamo(key):
     item = dynamo_response.get('Item', None)
     print(f"get_python_from_dynamo: {item}")
 
+    if not item:
+        return None
+
     for k, v in item.items():
         print(f"get_python_from_dynamo: {k}: {v}")
 
