@@ -80,5 +80,5 @@ def lambda_handler(event, context):
         )
         print(response)
     except Exception as e:
-        print(e)
+        print('Exception: ' + e)
         raise e
