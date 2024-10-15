@@ -71,10 +71,10 @@ def lambda_handler(event, _):
 
         rewrite_rules = get_rewrite_rules(msg['To'])
 
-        return_path = rewrite_rules['rewrite_return_path']
+        return_path = rewrite_rules.rewrite_return_path
         msg.replace_header('Return-Path', return_path) if 'Return-Path' in msg else msg.add_header('Return-Path', return_path)
 
-        rewrite_from_address = rewrite_rules['rewrite_from']
+        rewrite_from_address = rewrite_rules.rewrite_from
         if rewrite_from_address == '$return_path':
             rewrite_from_address = return_path
 
@@ -82,7 +82,7 @@ def lambda_handler(event, _):
             FromEmailAddress = rewrite_from_address,
             ReplyToAddresses = [msg['From']],
             Destination={
-                'ToAddresses': [rewrite_rules['rewrite_to_address']],  # New envelope recipient
+                'ToAddresses': [rewrite_rules.rewrite_to_address],  # New envelope recipient
             },
             Content={
                 'Raw': {
