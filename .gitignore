@@ -1,0 +1,2 @@
+# Ignore any zip file uplodaded to AWS Lambda.
+code.zip
