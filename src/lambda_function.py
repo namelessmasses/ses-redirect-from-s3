@@ -22,26 +22,26 @@ def get_rewrite_rules(key):
     # If no rewrite rules can be found under that key, 
     # then query for the '@<domain>'.
     
-    dynamo_response = ses_rewrite.query(
-        KeyConditionExpression = boto3.dynamodb.conditions.Key('to_address').eq(key)
+    dynamo_response = ses_rewrite.get_item (
+        Key={'to_address': key}
     )
 
-    response = dynamo_to_python(dynamo_response)
-    if response.Count > 0:
-        return response
+    item = dynamo_response.get('Item', None)
+    if item:
+        return dynamo_to_python(item)
 
     # Try @<domain> for rewrite rules.
 
-    key = '@' + key.split('@')[1]
-    dynamo_response = ses_rewrite.query(
-        KeyConditionExpression = boto3.dynamodb.conditions.Key('to_address').eq(key)
+    domain = '@' + key.split('@')[1]
+    dynamo_response = ses_rewrite.get_item(
+        Key = {'to_address': domain}
     )
 
-    response = dynamo_to_python(dynamo_response)
-    if response.Count > 0:
-        return response
+    item = dynamo_response.get('Item', None)
+    if item:
+        return dynamo_to_python(item)
 
-    raise KeyError()
+    raise KeyError(f"No rewrite rules found for key: {key} or {domain}")
 
 def lambda_handler(event, context):
     print("Received event: " + json.dumps(event, indent=2))
