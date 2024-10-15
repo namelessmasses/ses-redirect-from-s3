@@ -9,7 +9,7 @@ s3 = boto3.client('s3')
 ses = boto3.client('sesv2')
 dynamodb = boto3.resource('dynamodb');
 ses_rewrite = dynamodb.Table('ses_redirect_rewrite_rules')
-dserializer = boto3.dynamodb.types.TypeDeserializer()
+deserializer = boto3.dynamodb.types.TypeDeserializer()
 
 def dynamo_to_python(dynamodb_response : dict) -> dict:
     return {
