@@ -6,18 +6,17 @@
 # resources.
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: An AWS Serverless Application Model template describing your function.
+Description: An Amazon S3 trigger that reads the object as an email. Queries a DynamoDB for headers to rewrite. Sends the email with rewritten headers via SES.
 Resources:
   sesredirectfroms3:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src
       Description: >-
-        An Amazon S3 trigger that retrieves metadata for the object that has
-        been updated.
+        An Amazon S3 trigger that reads the object as an email. Queries a DynamoDB for headers to rewrite. Sends the email with rewritten headers via SES.
       MemorySize: 128
       Timeout: 3
-      Handler: lambda_function.lambda_handler
+      Handler: src.lambda_function.lambda_handler
       Runtime: python3.10
       Architectures:
         - x86_64
