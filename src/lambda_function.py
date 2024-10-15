@@ -9,15 +9,18 @@ s3 = boto3.client('s3')
 ses = boto3.client('sesv2')
 dynamodb = boto3.resource('dynamodb');
 ses_rewrite = dynamodb.Table('ses_redirect_rewrite_rules')
-deserializer = boto3.dynamodb.types.TypeDeserializer()
 
-def dynamo_to_python(dynamodb_response : dict) -> dict:
-    if not dynamodb_response:
-        return None
+class RewriteRule:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-    return {
-        k: deserializer.deserialize(v) for k, v in dynamodb_response.items()
-    }
+    def __str__(self):
+        attributes = ', '.join(f"{key}: {value}" for key, value in self.__dict__.items())
+        return f"RewriteRule({attributes})"
+
+def dynamo_to_python(dynamodb_response : dict) -> RewriteRule:
+    return RewriteRule(**dynamodb_response)
 
 def get_python_from_dynamo(key):
     dynamo_response = ses_rewrite.get_item (
