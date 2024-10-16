@@ -94,7 +94,8 @@ def lambda_handler(event, context):
             print(f'Header: {header}')
 
             if header['name'] == 'X-s3-bucket-prefix':
-                (bucket, prefix) = header['value'].split('/')
+                (bucket, *prefix) = header['value'].split('/')
+                prefix = '/'.join(prefix)
             elif (not object_name) and (header['name'] == 'Received'):
                 match = re.match(r'.* with SMTP id (.*) for .*', header['value'])
                 if match:
