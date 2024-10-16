@@ -107,7 +107,7 @@ def lambda_handler(event, context):
         if not object_name:
             raise KeyError(f"Missing SMTP id in Received header")
 
-        key = f'{prefix}/{object_name}'
+        key = f'{prefix}{object_name}'
 
         print(f"Bucket: {bucket}, Key: {key}")
 
