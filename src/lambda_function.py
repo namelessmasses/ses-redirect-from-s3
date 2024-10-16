@@ -2,6 +2,7 @@ import json
 import urllib.parse
 import boto3
 import email
+import re
 
 print('Loading function')
 
@@ -58,18 +59,58 @@ def get_rewrite_rules(key):
 
     raise KeyError(f"No rewrite rules found for key: {key} or {domain}")
 
-def lambda_handler(event, _):
+def read_raw_from_s3(bucket, key):
+    response = s3.get_object(Bucket=bucket, Key=key)
+    print("CONTENT TYPE: " + response['ContentType'])
+
+    raw_email = response['Body'].read().decode('utf-8')
+    print("S3 Email: " + raw_email)
+    return raw_email
+
+def lambda_handler(event, context):
     print("Received event: " + json.dumps(event, indent=2))
 
     # Get the object from the event and show its content type
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
     try:
-        response = s3.get_object(Bucket=bucket, Key=key)
-        print("CONTENT TYPE: " + response['ContentType'])
+        if event['Records'][0]['eventSource'] != 'aws:ses':
+            # STOP_RULE will continue on te the next rule which should be 
+            # reject.
+            
+            return 'STOP_RULE'
+        
+        event_headers = event['Records'][0]['ses']['mail']['headers']
 
-        raw_email = response['Body'].read().decode('utf-8')
-        print("S3 Email: " + raw_email)
+        # event_headres is a list of {'name': '...', 'value': '...'} dictionaries
+        # Find the 'X-s3-bucket-prefix' header
+        bucket = None
+        prefix = None
+
+        # SES receiving S3Action writes to the {bucket}/{prefix}/{SMTP id} 
+        # where SMTP id is the most recent Received header. Could match on
+        # the SES incoming SMTP server but this could change because of the
+        # AWS region.
+        object_name = None
+        for header in event_headers:
+            print(f'Header: {header}')
+
+            if header['name'] == 'X-s3-bucket-prefix':
+                (bucket, prefix) = header['value'].split('/')
+            elif (not object_name) and (header['name'] == 'Received'):
+                match = re.match(r'.* with SMTP id (.*) for .*', header['value'])
+                if match:
+                    object_name = match.group(1)
+
+        if not bucket or not prefix:
+            raise KeyError(f"Missing header X-s3-bucket-prefix: {bucket}, {prefix}")
+        
+        if not object_name:
+            raise KeyError(f"Missing SMTP id in Received header")
+
+        key = f'{prefix}/{object_name}'
+
+        print(f"Bucket: {bucket}, Key: {key}")
+
+        raw_email = read_raw_from_s3(bucket, key)
         msg = email.message_from_string(raw_email)
 
         rewrite_rules = get_rewrite_rules(msg['To'])
@@ -94,6 +135,9 @@ def lambda_handler(event, _):
             }
         )
         print(response)
+
+        return 'CONTINUE'
+    
     except Exception as e:
         print(e)
         raise e
