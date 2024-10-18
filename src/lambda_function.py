@@ -79,7 +79,7 @@ def X_s3_bucket_prefix(value, calling_locals):
 
     The header value is expected to be in the format 'bucket/prefix/'.
     '''
-    (bucket, *prefix) = header['value'].split('/')
+    (bucket, *prefix) = value.split('/')
     prefix = '/'.join(prefix)
     return {'bucket': bucket, 'prefix': prefix}
 
