@@ -11,6 +11,12 @@ ses = boto3.client('sesv2')
 dynamodb = boto3.resource('dynamodb');
 ses_rewrite = dynamodb.Table('ses_redirect_rewrite_rules')
 
+class StopRuleException(Exception):
+    pass
+
+class StopRuleSetException(Exception):
+    pass
+
 class RewriteRule:
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -67,6 +73,87 @@ def read_raw_from_s3(bucket, key):
     print("S3 Email: " + raw_email)
     return raw_email
 
+def X_s3_bucket_prefix(value, calling_locals):
+    '''
+    Extract the bucket and prefix from the header value.
+
+    The header value is expected to be in the format 'bucket/prefix/'.
+    '''
+    (bucket, *prefix) = header['value'].split('/')
+    prefix = '/'.join(prefix)
+    return {'bucket': bucket, 'prefix': prefix}
+
+def Received(value, calling_locals):
+    '''
+    If calling_locals already has an object_name, return an empty dictionary.
+
+    Extract the SMTP id from the Received header value and return it as 
+    'object_name'.
+    '''
+    if 'object_name' in calling_locals:
+        return {}
+    
+    match = re.match(r'.* with SMTP id (.*) for .*', value)
+    if match:
+        return {'object_name': match.group(1)}
+    
+    return {}
+
+def X_SES_Spam_Verdict(value, calling_locals):
+    '''
+    Throw StopRuleException if value is not 'PASS'.
+
+    Stopping the rule should allow the following rule in the set to be executed.
+    The following rule should be a reject rule for the same domain.
+    '''
+    if value.upper() != 'pass':
+        raise StopRuleException(f"Spam verdict is {value}")
+
+    return {}
+
+def X_SES_Virus_Verdict(value, calling_locals):
+    '''
+    Throw StopRuleException if value is not 'PASS'.
+
+    Stopping the rule should allow the following rule in the set to be executed.
+    The following rule should be a reject rule for the same domain.
+    '''
+    if value.upper() != 'PASS':
+        raise StopRuleException(f"Virus verdict is {value}")
+
+    return {}    
+
+
+def invoke_header_handler(header, calling_scope):
+    '''
+    Invoke a function in the current scope by the name of the header.
+    Replace header '-' with '_'.
+
+    If the function exists, call it with the value of the header.
+
+    Header handler functions should return a dictionary of the variables
+    they want to update in the calling scope.
+
+    If the function does not exist, return an empty dictionary.
+    '''
+    # Replace header '-' with '_'.
+    header_name = header['name'].replace('-', '_')
+
+    # Check for a function in the current scope of the name of the header.
+    # If the function exists, call it with the value of the header.
+
+    try:
+        result = locals()[header_name](header['value'], calling_scope)
+        print(f"Function result: {result}")
+        return result
+    except KeyError as ke:
+        print(f"Function '{header_name}' does not exist. {ke}")
+    except TypeError as te:
+        print(f"Argument mismatch when calling '{header_name}': {te}")
+        raise
+
+    return {}
+
 def lambda_handler(event, context):
     print("Received event: " + json.dumps(event, indent=2))
 
@@ -80,6 +167,8 @@ def lambda_handler(event, context):
         
         event_headers = event['Records'][0]['ses']['mail']['headers']
 
+        # Check headers for X-SES-Spam-Verdict and X-SES-Virus-Verdict
+
         # event_headres is a list of {'name': '...', 'value': '...'} dictionaries
         # Find the 'X-s3-bucket-prefix' header
         bucket = None
@@ -90,16 +179,13 @@ def lambda_handler(event, context):
         # the SES incoming SMTP server but this could change because of the
         # AWS region.
         object_name = None
+
         for header in event_headers:
             print(f'Header: {header}')
 
-            if header['name'] == 'X-s3-bucket-prefix':
-                (bucket, *prefix) = header['value'].split('/')
-                prefix = '/'.join(prefix)
-            elif (not object_name) and (header['name'] == 'Received'):
-                match = re.match(r'.* with SMTP id (.*) for .*', header['value'])
-                if match:
-                    object_name = match.group(1)
+            header_handler_result = invoke_header_handler(header, locals())
+            if header_handler_result:
+                locals().update(header_handler_result)
 
         if not bucket or not prefix:
             raise KeyError(f"Missing header X-s3-bucket-prefix: {bucket}, {prefix}")
@@ -139,6 +225,14 @@ def lambda_handler(event, context):
 
         return 'CONTINUE'
     
+    except StopRuleException as sre:
+        print(sre)
+        return 'STOP_RULE'
+    
+    except StopRuleSetException as srse:
+        print(srse)
+        return 'STOP_RULE_SET'
+    
     except Exception as e:
         print(e)
-        raise e
+        raise
