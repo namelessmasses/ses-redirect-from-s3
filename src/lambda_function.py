@@ -106,7 +106,7 @@ def X_SES_Spam_Verdict(value, calling_locals):
     Stopping the rule should allow the following rule in the set to be executed.
     The following rule should be a reject rule for the same domain.
     '''
-    if value.upper() != 'pass':
+    if value.upper() != 'PASS':
         raise StopRuleException(f"Spam verdict is {value}")
 
     return {}
