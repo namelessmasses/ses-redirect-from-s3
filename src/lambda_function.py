@@ -143,7 +143,7 @@ def invoke_header_handler(header, calling_scope):
     # If the function exists, call it with the value of the header.
 
     try:
-        result = locals()[header_name](header['value'], calling_scope)
+        result = globals()[header_name](header['value'], calling_scope)
         print(f"Function result: {result}")
         return result
     except KeyError as ke:
