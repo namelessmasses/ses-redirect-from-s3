@@ -143,9 +143,7 @@ def invoke_header_handler(header, calling_scope):
     # If the function exists, call it with the value of the header.
 
     try:
-        result = globals()[header_name](header['value'], calling_scope)
-        print(f"Function result: {result}")
-        return result
+        return globals()[header_name](header['value'], calling_scope)
     except KeyError as ke:
         print(f"Function '{header_name}' does not exist. {ke}")
     except TypeError as te:
@@ -166,27 +164,17 @@ def lambda_handler(event, context):
             return 'STOP_RULE'
         
         event_headers = event['Records'][0]['ses']['mail']['headers']
-
-        # Check headers for X-SES-Spam-Verdict and X-SES-Virus-Verdict
-
-        # event_headres is a list of {'name': '...', 'value': '...'} dictionaries
-        # Find the 'X-s3-bucket-prefix' header
-        bucket = None
-        prefix = None
-
-        # SES receiving S3Action writes to the {bucket}/{prefix}/{SMTP id} 
-        # where SMTP id is the most recent Received header. Could match on
-        # the SES incoming SMTP server but this could change because of the
-        # AWS region.
-        object_name = None
-
+        handled_headers = {}
         for header in event_headers:
             print(f'Header: {header}')
-
-            header_handler_result = invoke_header_handler(header, locals())
+            header_handler_result = invoke_header_handler(header, handled_headers)
+            print(f'Header handler result: {header_handler_result}')
             if header_handler_result:
-                locals().update(header_handler_result)
+                handled_headers.update(header_handler_result)
 
+        bucket = handled_headers.get('bucket', None)
+        prefix = handled_headers.get('prefix', None)
+        object_name = handled_headers.get('object_name', None)
         if not bucket or not prefix:
             raise KeyError(f"Missing header X-s3-bucket-prefix: {bucket}, {prefix}")
         
