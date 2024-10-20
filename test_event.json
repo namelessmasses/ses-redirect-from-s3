@@ -1,0 +1,173 @@
+{
+   "Records": [
+      {
+         "eventSource": "aws:ses",
+         "eventVersion": "1.0",
+         "ses": {
+            "receipt": {
+               "timestamp": "2024-10-20T00:11:51.878Z",
+               "processingTimeMillis": 1594,
+               "recipients": [
+                  "test@findkiwi.click"
+               ],
+               "spamVerdict": {
+                  "status": "PASS"
+               },
+               "virusVerdict": {
+                  "status": "PASS"
+               },
+               "spfVerdict": {
+                  "status": "PASS"
+               },
+               "dkimVerdict": {
+                  "status": "PASS"
+               },
+               "dmarcVerdict": {
+                  "status": "PASS"
+               },
+               "action": {
+                  "type": "Lambda",
+                  "topicArn": "arn:aws:sns:us-west-2:732160176752:ses-debug-redirect-accepted",
+                  "functionArn": "arn:aws:lambda:us-west-2:732160176752:function:ses-redirect-from-s3",
+                  "invocationType": "RequestResponse"
+               }
+            },
+            "mail": {
+               "timestamp": "2024-10-20T00:11:51.878Z",
+               "source": "ngarimu@mac.com",
+               "messageId": "ib53shtrr0mv8gl66f72sp7drgup7epk72tig5g1",
+               "destination": [
+                  "test@findkiwi.click"
+               ],
+               "headersTruncated": false,
+               "headers": [
+                  {
+                     "name": "Return-Path",
+                     "value": "<ngarimu@mac.com>"
+                  },
+                  {
+                     "name": "Received",
+                     "value": "from mr85p00im-ztdg06011101.me.com (mr85p00im-ztdg06011101.me.com [17.58.23.185]) by inbound-smtp.us-west-2.amazonaws.com with SMTP id ib53shtrr0mv8gl66f72sp7drgup7epk72tig5g1 for test@findkiwi.click; Sun, 20 Oct 2024 00:11:51 +0000 (UTC)"
+                  },
+                  {
+                     "name": "X-SES-Spam-Verdict",
+                     "value": "PASS"
+                  },
+                  {
+                     "name": "X-SES-Virus-Verdict",
+                     "value": "PASS"
+                  },
+                  {
+                     "name": "Received-SPF",
+                     "value": "pass (spfCheck: domain of mac.com designates 17.58.23.185 as permitted sender) client-ip=17.58.23.185; envelope-from=ngarimu@mac.com; helo=mr85p00im-ztdg06011101.me.com;"
+                  },
+                  {
+                     "name": "Authentication-Results",
+                     "value": "amazonses.com; spf=pass (spfCheck: domain of mac.com designates 17.58.23.185 as permitted sender) client-ip=17.58.23.185; envelope-from=ngarimu@mac.com; helo=mr85p00im-ztdg06011101.me.com; dkim=pass header.i=@mac.com; dmarc=pass header.from=mac.com;"
+                  },
+                  {
+                     "name": "X-SES-RECEIPT",
+                     "value": "AEFBQUFBQUFBQUFIVm4zUy9EcWQzenJKN0huTExHWWhhN0FPaURrYWNqdUR5dHNlejloWlV6YnhiOGdMNVVYWTFMQVo5eWNaWHpJMmdEK2dMaEE4aGVoMUFOemdvT2ZDVVlremw1MTU0QzQxeTdUT1FvWnRTTnBqSXhPZ3FjSFlCdmFWNGtkMTl5ejBLcERSZ2pOV2hIV1ovczl2T1pRMWZQWVNCcWhKdjBrTjBnN1V0Q3g2bFNPOW1EMXdVR1ExKzkrM0d5c1dwek43b1JuanBydG9TNS90emRRTzRPU1VweU1XT0ZxRnB4b2d2Q3F1QjdCODJ2NHp4WTV0M0ozWXAwUUpoRUphZHZydTRsWFA4dUt2ZE1iUStxald0TG1nY0xXSTk2QWxGa0dScE54eXVLNmNCb0E9PQ=="
+                  },
+                  {
+                     "name": "X-SES-DKIM-SIGNATURE",
+                     "value": "a=rsa-sha256; q=dns/txt; b=solUnFY0ibzo58tS/KcvLa7YIPymzOWsPPFwkZkiullZmrZgO7vmjjPPw0YgAy4P/bhR1PfNlQ+4XqUlmfIgiTUu5UdH9Gs5lbByOFDtAlAk0bYHooR07QU69zTSnvv63a9Rt8e3K0rYuLrAwa5WFiykOz8F+comb0KpyJjALfA=; c=relaxed/simple; s=7v7vs6w47njt4pimodk5mmttbegzsi6n; d=amazonses.com; t=1729383112; v=1; bh=EX09hQf9WFaxQfOPS6bhSHCWZ5taXIPyf+hcqnR92/U=; h=From:To:Cc:Bcc:Subject:Date:Message-ID:MIME-Version:Content-Type:X-SES-RECEIPT;"
+                  },
+                  {
+                     "name": "DKIM-Signature",
+                     "value": "v=1; a=rsa-sha256; c=relaxed/relaxed; d=mac.com; s=1a1hai; t=1729383111; bh=EX09hQf9WFaxQfOPS6bhSHCWZ5taXIPyf+hcqnR92/U=; h=Message-ID:Date:MIME-Version:To:From:Subject:Content-Type; b=LWEJ5OoOanf7npguq4h6AehHtyNj3ut0afcoS273HiPlbrDAtsDfJG6vjiiLhwDhEXbZvRi24J1Jp9rQNQIKmoj65BcgqP7H9/w95E+tOMR7BIk+5+jC1RDgiDF9fbLRSozlovFd96j+QjwKCbV9DmV9CjIs3aIKTTnnd296w3HqVEUoHn+w5dU3Fff7wfzYLKr1LKoW5QlT3ab7wEbvImZBBSqlVzd/qLDMsYWyM1O6mxswZ3uZmpQQAWIA594jlNwTlAb6kW3QNkf8IZGfou6YGulHnOYpU4XXst9Tn+VwP1jDQNkLEumW8RalPwwgolqmbZ/bUVeXPREDuAmzOQ=="
+                  },
+                  {
+                     "name": "Received",
+                     "value": "from [10.0.0.48] (mr38p00im-dlb-asmtp-mailmevip.me.com [17.57.152.18]) by mr85p00im-ztdg06011101.me.com (Postfix) with ESMTPSA id 5F291DA01D4 for <test@findkiwi.click>; Sun, 20 Oct 2024 00:11:50 +0000 (UTC)"
+                  },
+                  {
+                     "name": "Message-ID",
+                     "value": "<21403178-0f3a-45f5-8293-faaff3de6bfb@mac.com>"
+                  },
+                  {
+                     "name": "Date",
+                     "value": "Sat, 19 Oct 2024 17:11:50 -0700"
+                  },
+                  {
+                     "name": "MIME-Version",
+                     "value": "1.0"
+                  },
+                  {
+                     "name": "User-Agent",
+                     "value": "Mozilla Thunderbird"
+                  },
+                  {
+                     "name": "Content-Language",
+                     "value": "en-US"
+                  },
+                  {
+                     "name": "To",
+                     "value": "test@findkiwi.click"
+                  },
+                  {
+                     "name": "From",
+                     "value": "Michael Ngarimu <ngarimu@mac.com>"
+                  },
+                  {
+                     "name": "Subject",
+                     "value": "1711"
+                  },
+                  {
+                     "name": "Autocrypt",
+                     "value": "addr=ngarimu@mac.com; keydata= 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"
+                  },
+                  {
+                     "name": "Content-Type",
+                     "value": "text/plain; charset=UTF-8; format=flowed"
+                  },
+                  {
+                     "name": "Content-Transfer-Encoding",
+                     "value": "7bit"
+                  },
+                  {
+                     "name": "X-Proofpoint-GUID",
+                     "value": "qA49CW4HVeK-SX5kYbtK2ClIlGjsBESP"
+                  },
+                  {
+                     "name": "X-Proofpoint-ORIG-GUID",
+                     "value": "qA49CW4HVeK-SX5kYbtK2ClIlGjsBESP"
+                  },
+                  {
+                     "name": "X-Proofpoint-Virus-Version",
+                     "value": "vendor=baseguard engine=ICAP:2.0.272,Aquarius:18.0.1051,Hydra:6.0.680,FMLib:17.12.62.30 definitions=2024-10-19_21,2024-10-17_01,2024-09-30_01"
+                  },
+                  {
+                     "name": "X-Proofpoint-Spam-Details",
+                     "value": "rule=notspam policy=default score=0 mlxlogscore=272 phishscore=0 bulkscore=0 suspectscore=0 adultscore=0 mlxscore=0 clxscore=1015 malwarescore=0 spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1 engine=8.19.0-2308100000 definitions=main-2410200000"
+                  },
+                  {
+                     "name": "X-s3-bucket-prefix",
+                     "value": "com-ngarimu-s3-usw2-reporting/ses/archive/click-findkiwi/"
+                  },
+                  {
+                     "name": "X-debug",
+                     "value": "accepted pre lambda"
+                  },
+                  {
+                     "name": "X-SES-Virus-Verdict",
+                     "value": "FAIL"
+                  }
+               ],
+               "commonHeaders": {
+                  "returnPath": "ngarimu@mac.com",
+                  "from": [
+                     "Michael Ngarimu <ngarimu@mac.com>"
+                  ],
+                  "date": "Sat, 19 Oct 2024 17:11:50 -0700",
+                  "to": [
+                     "test@findkiwi.click"
+                  ],
+                  "messageId": "<21403178-0f3a-45f5-8293-faaff3de6bfb@mac.com>",
+                  "subject": "1711"
+               }
+            }
+         }
+      }
+   ]
+}
