@@ -219,15 +219,15 @@ def lambda_handler(event, context):
         )
         print(response)
 
-        return 'CONTINUE'
+        return dict(disposition='CONTINUE')
     
     except StopRuleException as sre:
         print(f'{sre=}')
-        return 'STOP_RULE'
+        return dict(disposition='STOP_RULE')
     
     except StopRuleSetException as srse:
         print(f'{srse=}')
-        return 'STOP_RULE_SET'
+        return dict(disposition='STOP_RULE_SET')
     
     except Exception as e:
         print(f'{e=}')
