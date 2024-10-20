@@ -10,12 +10,15 @@ s3 = boto3.client('s3')
 ses = boto3.client('sesv2')
 dynamodb = boto3.resource('dynamodb');
 ses_rewrite = dynamodb.Table('ses_redirect_rewrite_rules')
+sns = boto3.client('sns')
 
 class StopRuleException(Exception):
-    pass
+    def __str__(self):
+        return f"StopRuleException: {self.args}"
 
 class StopRuleSetException(Exception):
-    pass
+    def __str__(self):
+        return f"StopRuleSetException: {self.args}"
 
 class RewriteRule:
     def __init__(self, **kwargs):
@@ -34,10 +37,10 @@ def get_python_from_dynamo(key):
         Key={'to_address': key}
     )
 
-    print(f"get_python_from_dynamo: {dynamo_response}")
+    print(f"{dynamo_response}")
 
     item = dynamo_response.get('Item', None)
-    print(f"get_python_from_dynamo: {item}")
+    print(f"{item=}")
 
     if not item:
         return None
@@ -70,7 +73,7 @@ def read_raw_from_s3(bucket, key):
     print("CONTENT TYPE: " + response['ContentType'])
 
     raw_email = response['Body'].read().decode('utf-8')
-    print("S3 Email: " + raw_email)
+    print(f"{raw_email=}")
     return raw_email
 
 def X_s3_bucket_prefix(value, calling_locals):
@@ -106,6 +109,7 @@ def X_SES_Spam_Verdict(value, calling_locals):
     Stopping the rule should allow the following rule in the set to be executed.
     The following rule should be a reject rule for the same domain.
     '''
+    print(f"X_SES_Spam_Verdict: {value=}")
     if value.upper() != 'PASS':
         raise StopRuleException(f"Spam verdict is {value}")
 
@@ -118,6 +122,7 @@ def X_SES_Virus_Verdict(value, calling_locals):
     Stopping the rule should allow the following rule in the set to be executed.
     The following rule should be a reject rule for the same domain.
     '''
+    print(f'X_SES_Virus_Verdict: {value=}')
     if value.upper() != 'PASS':
         raise StopRuleException(f"Virus verdict is {value}")
 
@@ -153,7 +158,9 @@ def invoke_header_handler(header, calling_scope):
     return {}
 
 def lambda_handler(event, context):
-    print("Received event: " + json.dumps(event, indent=2))
+    print('Received event (compact)', json.dumps(event, separators=(',', ':'), indent=None))
+    print("Received event: " + json.dumps(event, separators=(',', ':'), indent=0))
+    print("Received context: " + str(context))
 
     # Get the object from the event and show its content type
     try:
@@ -166,9 +173,9 @@ def lambda_handler(event, context):
         event_headers = event['Records'][0]['ses']['mail']['headers']
         handled_headers = {}
         for header in event_headers:
-            print(f'Header: {header}')
+            print(f'{header=}')
             header_handler_result = invoke_header_handler(header, handled_headers)
-            print(f'Header handler result: {header_handler_result}')
+            print(f'{header_handler_result=}')
             if header_handler_result:
                 handled_headers.update(header_handler_result)
 
@@ -183,10 +190,11 @@ def lambda_handler(event, context):
 
         key = f'{prefix}{object_name}'
 
-        print(f"Bucket: {bucket}, Key: {key}")
+        print(f"{bucket=}, {key=}")
 
         raw_email = read_raw_from_s3(bucket, key)
         msg = email.message_from_string(raw_email)
+        print(f"{msg}")
 
         rewrite_rules = get_rewrite_rules(msg['To'])
 
@@ -214,13 +222,13 @@ def lambda_handler(event, context):
         return 'CONTINUE'
     
     except StopRuleException as sre:
-        print(sre)
+        print(f'{sre=}')
         return 'STOP_RULE'
     
     except StopRuleSetException as srse:
-        print(srse)
+        print(f'{srse=}')
         return 'STOP_RULE_SET'
     
     except Exception as e:
-        print(e)
+        print(f'{e=}')
         raise
