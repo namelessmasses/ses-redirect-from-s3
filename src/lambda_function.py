@@ -2,8 +2,6 @@ import json
 import urllib.parse
 import boto3
 import email
-import re
-import regex
 
 print('Loading function')
 
