@@ -164,8 +164,14 @@ def get_outbound_from(original_from, rewrite_rules):
         if rewrite_rules.rewrite_from.startswith('<original_from>@'):
             # Reformat original_from converting so that it can be placed before
             # @ in the rewrite_from.
-            original_from = original_from.replace('@', '_at_')
-            return 'no-receipt-' + rewrite_rules.rewrite_from.replace('<original_from>', original_from)
+            rewritten_from = original_from.replace('@', '_at_')
+
+            # Ensure that rewritten_from removes any "Name <email>" format and is
+            # just the email.
+            if '<' in rewritten_from and '>' in rewritten_from:
+                rewritten_from = re.search(r'<(.*?)>', rewritten_from).group(1)
+
+            return 'no-receipt-' + rewrite_rules.rewrite_from.replace('<original_from>', rewritten_from)
         
         return rewrite_rules.rewrite_from
 
