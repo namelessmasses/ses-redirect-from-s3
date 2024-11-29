@@ -161,7 +161,7 @@ def get_outbound_from(original_from, rewrite_rules):
         if rewrite_rules.rewrite_from == '$return_path':
             return rewrite_rules.return_path
         
-        if rewrite_rules.rewrite_from.startswith('<orginal_from>@'):
+        if rewrite_rules.rewrite_from.startswith('<original_from>@'):
             # Reformat original_from converting so that it can be placed before
             # @ in the rewrite_from.
             original_from = original_from.replace('@', '_at_')
