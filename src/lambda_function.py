@@ -2,6 +2,7 @@ import json
 import urllib.parse
 import boto3
 import email
+import re
 
 print('Loading function')
 
