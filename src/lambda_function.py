@@ -3,6 +3,7 @@ import urllib.parse
 import boto3
 import email
 import re
+import regex
 
 print('Loading function')
 
@@ -157,6 +158,18 @@ def invoke_header_handler(header, calling_scope):
 
     return {}
 
+def get_outbound_from(original_from, rewrite_rules):
+        if rewrite_rules.rewrite_from == '$return_path':
+            return rewrite_rules.return_path
+        
+        if rewrite_rules.rewrite_from.startswith('<orginal_from>@'):
+            # Reformat original_from converting so that it can be placed before
+            # @ in the rewrite_from.
+            original_from = original_from.replace('@', '_at_')
+            return 'no-receipt-' + rewrite_rules.rewrite_from.replace('<orginal_from>', original_from)
+        
+        return rewrite_rules.rewrite_from
+
 def lambda_handler(event, context):
     print('Received event (compact)', json.dumps(event, separators=(',', ':'), indent=None))
     print("Received event: " + json.dumps(event, separators=(',', ':'), indent=0))
@@ -201,12 +214,11 @@ def lambda_handler(event, context):
         return_path = rewrite_rules.rewrite_return_path
         msg.replace_header('Return-Path', return_path) if 'Return-Path' in msg else msg.add_header('Return-Path', return_path)
 
-        rewrite_from_address = rewrite_rules.rewrite_from
-        if rewrite_from_address == '$return_path':
-            rewrite_from_address = return_path
+        outbound_from = get_outbound_from(msg['From'], rewrite_rules)
+        print(f"{outbound_from=}")
 
         response = ses.send_email(
-            FromEmailAddress = rewrite_from_address,
+            FromEmailAddress = outbound_from,
             ReplyToAddresses = [msg['From']],
             Destination={
                 'ToAddresses': [rewrite_rules.rewrite_to_address],  # New envelope recipient
