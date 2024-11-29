@@ -165,7 +165,7 @@ def get_outbound_from(original_from, rewrite_rules):
             # Reformat original_from converting so that it can be placed before
             # @ in the rewrite_from.
             original_from = original_from.replace('@', '_at_')
-            return 'no-receipt-' + rewrite_rules.rewrite_from.replace('<orginal_from>', original_from)
+            return 'no-receipt-' + rewrite_rules.rewrite_from.replace('<original_from>', original_from)
         
         return rewrite_rules.rewrite_from
 
