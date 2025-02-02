@@ -55,6 +55,10 @@ def get_rewrite_rules(key):
     # If no rewrite rules can be found under that key, 
     # then query for the '@<domain>'.
     
+    # If key contains friendly name, remove it.
+    if '<' in key and '>' in key:
+        key = re.search(r'<(.*?)>', key).group(1)
+    
     item = get_python_from_dynamo(key)
     if item:
         return item
