@@ -225,6 +225,14 @@ def lambda_handler(event, context):
 
         outbound_from = get_outbound_from(msg['From'], rewrite_rules)
         print(f"{outbound_from=}")
+        
+        # If msg has multiple 'DKIM-Signature' headers, remove all but the first.
+        # TODO Workaround for SES not allowing multiple DKIM-Signature headers.
+        # This is a temporary fix until SES supports multiple DKIM signatures.
+        dkim_signatures = msg.get_all('DKIM-Signature', [])
+        if len(dkim_signatures) > 1:
+            for sig in dkim_signatures[1:]:
+                msg.remove_header('DKIM-Signature', sig)                
 
         response = ses.send_email(
             FromEmailAddress = outbound_from,
