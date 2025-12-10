@@ -80,7 +80,7 @@ def read_raw_from_s3(bucket, key):
     print(f"{raw_email=}")
     return raw_email
 
-def X_s3_bucket_prefix(value, calling_locals):
+def onheader_X_s3_bucket_prefix(value, calling_locals):
     '''
     Extract the bucket and prefix from the header value.
 
@@ -90,7 +90,7 @@ def X_s3_bucket_prefix(value, calling_locals):
     prefix = '/'.join(prefix)
     return {'bucket': bucket, 'prefix': prefix}
 
-def Received(value, calling_locals):
+def onheader_Received(value, calling_locals):
     '''
     If calling_locals already has an object_name, return an empty dictionary.
 
@@ -106,7 +106,7 @@ def Received(value, calling_locals):
     
     return {}
 
-def X_SES_Spam_Verdict(value, calling_locals):
+def onheader_X_SES_Spam_Verdict(value, calling_locals):
     '''
     Throw StopRuleException if value is not 'PASS'.
 
@@ -119,7 +119,7 @@ def X_SES_Spam_Verdict(value, calling_locals):
 
     return {}
 
-def X_SES_Virus_Verdict(value, calling_locals):
+def onheader_X_SES_Virus_Verdict(value, calling_locals):
     '''
     Throw StopRuleException if value is not 'PASS'.
 
@@ -132,6 +132,15 @@ def X_SES_Virus_Verdict(value, calling_locals):
 
     return {}    
 
+def onheader_reply_to(value, calling_locals):
+    '''
+    Add the 'reply_to' key to the calling_locals dictionary with the value of the header.
+    '''
+    calling_locals['reply_to'] = value
+    return {}
+
+def onheader_Reply_To(value, calling_locals):
+    return onheader_reply_to(value, calling_locals)
 
 def invoke_header_handler(header, calling_scope):
     '''
@@ -150,13 +159,14 @@ def invoke_header_handler(header, calling_scope):
 
     # Check for a function in the current scope of the name of the header.
     # If the function exists, call it with the value of the header.
+    header_handler_name = f'onheader_{header_name}'
 
     try:
-        return globals()[header_name](header['value'], calling_scope)
+        return globals()[header_handler_name](header['value'], calling_scope)
     except KeyError as ke:
-        print(f"Function '{header_name}' does not exist. {ke}")
+        print(f"Function '{header_handler_name}' does not exist. {ke}")
     except TypeError as te:
-        print(f"Argument mismatch when calling '{header_name}': {te}")
+        print(f"Argument mismatch when calling '{header_handler_name}': {te}")
         raise
 
     return {}
@@ -216,7 +226,7 @@ def lambda_handler(event, context):
 
         raw_email = read_raw_from_s3(bucket, key)
         msg = email.message_from_string(raw_email)
-        print(f"{msg}")
+        print(f"{msg=}")
 
         rewrite_rules = get_rewrite_rules(msg['To'])
 
@@ -226,6 +236,8 @@ def lambda_handler(event, context):
         outbound_from = get_outbound_from(msg['From'], rewrite_rules)
         print(f"{outbound_from=}")
         
+        # Headers to be tweaked for SES sending.
+
         # If msg has multiple 'DKIM-Signature' headers, remove all but the first.
         # TODO Workaround for SES not allowing multiple DKIM-Signature headers.
         # This is a temporary fix until SES supports multiple DKIM signatures.
@@ -238,9 +250,28 @@ def lambda_handler(event, context):
             
         print(f"Remaining DKIM-Signature headers: {len(dkim_signatures)}")
 
+        # Sender -> X-Mask-Original-Sender
+        if 'Sender' in msg:
+            original_sender = msg['Sender']
+            msg.replace_header('Sender', outbound_from)
+            msg.add_header('X-Mask-Original-Sender', original_sender)
+
+        # Reply-To:
+        #   - Remove the header from the message.
+        #   - Use the value of the original reply-to: (handled_headers['reply_to']) 
+        #     as the friendly name for outbound_from.
+        if 'Reply-To' in msg:
+            del msg['Reply-To']
+            outbound_from = f'"{handled_headers["reply_to"]}" <{outbound_from}>'
+        elif 'reply-to' in msg:
+            del msg['reply-to']
+            outbound_from = f'"{handled_headers["reply_to"]}" <{outbound_from}>'
+        
+        print(f"Final: {outbound_from=}")
+        print(f'{msg.as_string()=}')
+        
         response = ses.send_email(
             FromEmailAddress = outbound_from,
-            ReplyToAddresses = [msg['From']],
             Destination={
                 'ToAddresses': [rewrite_rules.rewrite_to_address],  # New envelope recipient
             },
