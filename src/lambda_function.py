@@ -253,7 +253,7 @@ def lambda_handler(event, context):
         # Sender -> X-Mask-Original-Sender
         if 'Sender' in msg:
             original_sender = msg['Sender']
-            msg.replace_header('Sender', outbound_from)
+            del msg['Sender']
             msg.add_header('X-Mask-Original-Sender', original_sender)
 
         # Reply-To:
